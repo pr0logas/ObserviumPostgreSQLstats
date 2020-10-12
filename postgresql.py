@@ -10,15 +10,15 @@
 import psycopg2
 
 # Please *SECURE your credentials*
-db_host='127.0.0.1'
-db_user='postgres'
-db_pass='whatsthes3cr3t'
-db_name='mydb'
+db_host = '127.0.0.1'
+db_user = 'postgres'
+db_pass = 'whatsthes3cr3t'
+db_name = 'mydb'
 
-PG_ACTIVITY='''
+PG_ACTIVITY = '''
     SELECT datname, usename, client_addr, query FROM pg_stat_activity WHERE client_addr is not NULL;
     '''
-NUM_COMMITS='''
+NUM_COMMITS = '''
     SELECT SUM(xact_commit) as xact_commit, SUM(xact_rollback) as xact_rollback, SUM(blks_read) as blks_read,
     SUM(blks_hit) as blks_hit, SUM(tup_returned) as tup_returned, SUM(tup_fetched) as tup_fetched,
     SUM(tup_inserted) as tup_inserted, SUM(tup_updated) as tup_updated, SUM(tup_deleted) as tup_deleted
@@ -27,15 +27,17 @@ NUM_COMMITS='''
 
 version = []
 pg_commits = {}
-pg_connection_count = {'count' : 0}
+pg_connection_count = {'count': 0}
 pg_datnames = []
 pg_usenames = []
 pg_client_addrs = []
 pg_idle = []
 pg_select = []
+pg_insert = []
 pg_update = []
 pg_delete = []
 pg_other = []
+
 
 def analyze_pg_version(pg_ver):
     if int(pg_ver) < 100000:
@@ -46,10 +48,12 @@ def analyze_pg_version(pg_ver):
         # This should never happen.
         return("???")
 
+
 def execute_pg_statement(cursor, statement):
     cursor.execute(statement)
     data = cursor.fetchall()
     return data
+
 
 def aggregate_connections_data(data):
     count = len(data)
@@ -75,26 +79,30 @@ def aggregate_connections_data(data):
             if i[3] != None or i[3] != '':
                 if 'SELECT' or 'select' in i[3]:
                     pg_select.append(i[3])
+                elif 'INSERT' or 'insert' in i[3]:
+                    pg_insert.append(i[3])
                 elif 'UPDATE' or 'update' in i[3]:
-                    pg_update.append(i [3])
+                    pg_update.append(i[3])
                 elif 'DELETE' or 'delete' in i[3]:
-                    pg_delete.append(i [3])
+                    pg_delete.append(i[3])
                 elif '<IDLE>' in i[3]:
                     pg_idle.append(i[3])
                 else:
                     pg_other.append(i[3])
 
+
 def aggregate_commits(data):
     # This enum correlates with - NUM_COMMITS query;
     pg_commits['xact_commit'] = (data[0])
     pg_commits['xact_rollback'] = (data[1])
-    pg_commits ['blks_read'] = (data [2])
-    pg_commits ['blks_hit'] = (data [3])
-    pg_commits ['tup_returned'] = (data [4])
-    pg_commits ['tup_fetched'] = (data [5])
-    pg_commits ['tup_inserted'] = (data [6])
-    pg_commits ['tup_updated'] = (data [7])
-    pg_commits ['tup_deleted'] = (data [8])
+    pg_commits['blks_read'] = (data[2])
+    pg_commits['blks_hit'] = (data[3])
+    pg_commits['tup_returned'] = (data[4])
+    pg_commits['tup_fetched'] = (data[5])
+    pg_commits['tup_inserted'] = (data[6])
+    pg_commits['tup_updated'] = (data[7])
+    pg_commits['tup_deleted'] = (data[8])
+
 
 def fetch():
     try:
