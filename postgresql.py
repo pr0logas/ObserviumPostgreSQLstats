@@ -16,7 +16,7 @@ db_pass='whatsthes3cr3t'
 db_name='mydb'
 
 PG_ACTIVITY='''
-    SELECT datname, usename, client_addr, query FROM pg_stat_activity;
+    SELECT datname, usename, client_addr, query FROM pg_stat_activity WHERE client_addr is not NULL;
     '''
 NUM_COMMITS='''
     SELECT SUM(xact_commit) as xact_commit, SUM(xact_rollback) as xact_rollback, SUM(blks_read) as blks_read,
