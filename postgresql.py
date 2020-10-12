@@ -5,6 +5,7 @@
 ##: Description: PostgreSQL stats script rewritten from Ivan Dimitrov Perl script. Big Thanks to him //
 ## Originally dedicated for Observium - Network management and monitoring tool //
 ## Should work with Postgres > 9 and above. //
+## https://docs.observium.org/apps/#postgresql //
 
 import psycopg2
 
@@ -18,9 +19,9 @@ PG_ACTIVITY='''
     SELECT datname, usename, client_addr, query FROM pg_stat_activity;
     '''
 NUM_COMMITS='''
-    SELECT SUM(xact_commit) as xact_commit, SUM(xact_rollback) as xact_rollback, SUM(blks_read) as blks_read, 
-    SUM(blks_hit) as blks_hit, SUM(tup_returned) as tup_returned, SUM(tup_fetched) as tup_fetched, 
-    SUM(tup_inserted) as tup_inserted, SUM(tup_updated) as tup_updated, SUM(tup_deleted) as tup_deleted 
+    SELECT SUM(xact_commit) as xact_commit, SUM(xact_rollback) as xact_rollback, SUM(blks_read) as blks_read,
+    SUM(blks_hit) as blks_hit, SUM(tup_returned) as tup_returned, SUM(tup_fetched) as tup_fetched,
+    SUM(tup_inserted) as tup_inserted, SUM(tup_updated) as tup_updated, SUM(tup_deleted) as tup_deleted
     FROM pg_stat_database;
     '''
 
@@ -42,7 +43,8 @@ def analyze_pg_version(pg_ver):
     elif int(pg_ver) > 100000 and int(pg_ver) < 1000000:
         return str(pg_ver)[:2] + '.' + str(pg_ver)[2:3]
     else:
-        return("Does the Earth still exists? :)")
+        # This should never happen.
+        return("???")
 
 def execute_pg_statement(cursor, statement):
     cursor.execute(statement)
@@ -59,15 +61,15 @@ def aggregate_connections_data(data):
             seen_usenames = set(pg_usenames)
             seen_client_addrs = set(pg_client_addrs)
 
-            if i[0] not in seen_datnames or i[0] != None:
+            if i[0] not in seen_datnames and i[0] != None and i[0] != '':
                 pg_datnames.append(i [0])
-            if i[1] not in seen_usenames or i[1] != None:
+            if i[1] not in seen_usenames and i[1] != None and i[0] != '':
                 pg_usenames.append(i[1])
             if i[2] != None:
                 cc += 1
                 pg_connection_count['count'] = cc
 
-                if i [2] not in seen_client_addrs:
+                if i[2] not in seen_client_addrs and i[2] != None:
                     pg_client_addrs.append(i[2])
 
             if i[3] != None or i[3] != '':
@@ -78,9 +80,9 @@ def aggregate_connections_data(data):
                 elif 'DELETE' or 'delete' in i[3]:
                     pg_delete.append(i [3])
                 elif '<IDLE>' in i[3]:
-                    pg_idle.append(i [3])
+                    pg_idle.append(i[3])
                 else:
-                    pg_other.append(i [3])
+                    pg_other.append(i[3])
 
 def aggregate_commits(data):
     # This enum correlates with - NUM_COMMITS query;
